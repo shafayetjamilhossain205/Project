@@ -1,0 +1,389 @@
+---
+title: "Project 4"
+author: "**Muhammad Abdur Rahman**  **Sheroze Liaquat**  **Ahsan Iqbal**  **Ayesha Ishaq**  **Mohammad Shafayet Jamil Hossain**"
+date: "November 13, 2022"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=F, warning=F, echo=T, cache=F)
+```
+
+# Reading & Formatting Data
+```{r}
+#DSL.StrongPasswordData <- read.csv("C:/Users/mh734/Desktop/Fall 2022/stat 601/project 4/DSL-StrongPasswordData.csv")
+```
+
+
+```{r}
+library(corrplot)
+library(lme4)
+library(ggplot2)
+library(tidyverse)
+library(broom)
+library(AICcmodavg)
+
+strong_passwords <- as.data.frame(read.csv("DSL-StrongPasswordData.csv"))
+strong_passwords$subject <- as.numeric(as.factor(strong_passwords$subject))
+head(strong_passwords)
+summary(strong_passwords)
+
+num_sessions <- 8
+num_subjects <- 51
+
+# Separating by subject
+by_subject <- list()
+for (sub in 1:num_subjects) {
+  by_subject[[sub]] <- strong_passwords[strong_passwords$subject == sub, ]
+  by_subject[[sub]]$subject <- NULL
+}
+```
+
+# Exploratory Analysis
+
+```{r}
+
+num_columns <- 2
+num_rows <- 4
+
+sub_num<-floor(runif(1, min=1, max=51))
+
+par(mfrow = c(num_rows, num_columns), mar=c(1.2, 4, 1.8, 1.2))
+for (session in 1:num_sessions) {
+  data <- strong_passwords[strong_passwords$sessionIndex == session, ]
+  data$sessionIndex <- NULL
+  data <- data[data$subject == sub_num, ]
+  data$subject <- NULL
+  data$rep <- NULL
+  boxplot(data, ylab="Time (s)")
+}
+
+mtext("Data for Subject 1 for sessions 1 to 8 (left to right)", side=3, line =-1, outer=T)
+
+
+```
+
+# Aggregating Data for Further Analysis
+Following the original research paper, we summarize the variables into four features:
+1. Keydown-Keydown
+2. Keyup-Keydown
+3. Hold
+
+
+# Creating the response variable and aggregated data. (While taking mean over repetions)
+We first sum each Keydown-Keydown, Keyup-Keydown, and Hold instance for each instance repetition. We consider each repetition for each session one experiment. Since each experiment is repeated 50 times in one session, to get the true value we take the mean of the repetitions along each of the three features. The total time is simply the sum of the mean of the three features.
+
+```{r}
+
+agg_rows <- num_sessions * num_subjects
+agg_strong_passwords <- data.frame(matrix(ncol=6, nrow=agg_rows))
+colnames(agg_strong_passwords) <-
+  c("subject", "session", "DD", "UD", "H", "Total_Time")
+
+n <- 0
+for (sub in 1:num_subjects) {
+  for (sess in 1:num_sessions) {
+    data <- by_subject[[sub]][by_subject[[sub]]$sessionIndex == sess, ]
+    data$DD_sum <- rowSums(data[startsWith(names(data), "DD")])
+    data$UD_sum <- rowSums(data[startsWith(names(data), "UD")])
+    data$H_sum <- rowSums(data[startsWith(names(data), "H")])
+    agg_strong_passwords$subject[sess+n] <- sub
+    agg_strong_passwords$session[sess+n] <- sess
+    agg_strong_passwords$DD[sess+n] <- mean(data$DD_sum)
+    agg_strong_passwords$UD[sess+n] <- mean(data$UD_sum)
+    agg_strong_passwords$H[sess+n] <- mean(data$H_sum)
+  }
+  n <- n + 8
+}
+agg_strong_passwords$Total_Time <- rowSums(agg_strong_passwords[, 3:5])
+
+```
+
+# Exploratory Analysis on Aggregated Data.
+
+For explaining the data, we will randomly pick 4 subjects to explore their data. Similar, procedure can be applied to all the subjects. First we will do the boxplots for each session for the randomly selected subjects for each explanatory variable
+
+```{r}
+subjects_considered <-4
+
+Z<-floor(runif(subjects_considered, min=1, max=51))
+num_sessions <-8
+
+num_rows <-2
+num_columns<-2
+
+par(mfrow = c(num_rows, num_columns), mar=c(3, 3, 2, 1.2))
+for (i in 1:subjects_considered){
+    data <- agg_strong_passwords[agg_strong_passwords$subject == Z[i], ]
+    data <- subset(data, select = -c(session) )
+    data$subject <- NULL
+    title <- paste(c("Subject", Z[i]))
+    boxplot(data, ylab="Time (s)", col = c("red", "green", "blue","yellow"), main=title)
+    
+}
+```
+
+
+# Now we will determine the correlation among the different explanatory variables and the response variable to check the relationship. From
+
+
+```{r}
+data_temp_aggregated <-cor(subset(agg_strong_passwords, select = -c(subject, session,Total_Time)))
+
+corrplot(data_temp_aggregated, method="number", title = "Total data", mar=c(0,0,1,0))
+```
+# Now we will look at the individual explanatory variables for different users over each session in the form of the scatter plot. We will again select four users randomly to check the trend. First we will check the DD, UD, and H variables.
+
+```{r}
+
+Z<-floor(runif(subjects_considered, min=1, max=51))
+
+par(mfrow = c(num_rows, num_columns), mar=c(4.5, 4, 2, 1.2))
+for (i in 1:subjects_considered){
+    data <- agg_strong_passwords[agg_strong_passwords$subject == Z[i], ]
+    data <- subset(data, select = -c(session) )
+    data$subject <- NULL
+    title <- paste(c("Subject", Z[i]), collapse = " ")
+    plot(1:8,data$DD, ylab="Time (s)", xlab = 'Session ID', type="l", main=title, ylim = c(0.05,3.5), col='red')
+    lines(1:8,data$UD, ylab="Time (s)",  xlab = 'Session ID', col='green')
+    lines(1:8,data$H, ylab="Time (s)", xlab = 'Session ID' ,col='blue')
+legend("topleft", legend=c("DD", "UD","H"),
+       col=c("red", "green","blue"), lty=1:2, cex=0.5)
+    
+    
+}
+
+```
+# Now we will look at the total time for the subjects over the different sessions. We will again select the five users randomly to check the trend.
+
+```{r}
+par(mfrow = c(num_rows, num_columns), mar=c(4.5, 4, 2, 1.2))
+for (i in 1:subjects_considered){
+    data <- agg_strong_passwords[agg_strong_passwords$subject == Z[i], ]
+    data <- subset(data, select = -c(session) )
+    data$subject <- NULL
+    title <- paste(c("Subject", Z[i]), collapse = " ")
+    plot(1:8,data$Total_Time, ylab="Mean total time (s)", xlab = 'Session ID', type="b", main=title)
+
+}
+```
+# Aggregating Data While Keeping Repetitions
+First we will develop the simple linear model for the randomly selected subjects. We will modify our data a bit to develop the linear regression. We will add the DD, UD, and H variables for each subject over all the sessions. However, we will not take the mean over all the repitions. Instead, we will train our model based on the repititions data while developing the linear relationship between the total time and the explanatory variables
+
+```{r}
+
+num_repititions <- 50
+
+agg_rows_1 <- num_sessions * num_subjects*num_repititions
+agg_strong_pass_w_rep <- data.frame(matrix(ncol=7, nrow=agg_rows_1))
+colnames(agg_strong_pass_w_rep) <-
+  c("subject", "session","rep", "DD", "UD", "H", "Total_Time")
+
+
+agg_strong_pass_w_rep$subject <- strong_passwords$subject
+agg_strong_pass_w_rep$session <- strong_passwords$sessionIndex
+agg_strong_pass_w_rep$rep <- strong_passwords$rep
+
+agg_strong_pass_w_rep$DD <- rowSums(strong_passwords[startsWith(names(strong_passwords), "DD")])
+
+agg_strong_pass_w_rep$UD <- rowSums(strong_passwords[startsWith(names(strong_passwords), "UD")])
+
+agg_strong_pass_w_rep$H <- rowSums(strong_passwords[startsWith(names(strong_passwords), "H")])
+
+agg_strong_pass_w_rep$Total_Time <- agg_strong_pass_w_rep$DD +
+  agg_strong_pass_w_rep$UD + agg_strong_pass_w_rep$H
+```
+
+
+
+#Making scatter plots to check the trend. The response variable seems to be quite linear with respect to the most of the explanatory variables.
+
+```{r}
+par(mfrow = c(1, 3), mar=c(4.5, 4, 2, 1.2))
+
+plot(agg_strong_pass_w_rep$Total_Time~agg_strong_pass_w_rep$DD, xlab="DD", ylab="Total Time")
+plot(agg_strong_pass_w_rep$Total_Time~agg_strong_pass_w_rep$UD, xlab="UD", ylab="Total Time")
+plot(agg_strong_pass_w_rep$Total_Time~agg_strong_pass_w_rep$H, xlab="H", ylab="Total Time")
+
+
+```
+
+
+
+# Builiding Linear Regression Models
+Now we will apply the linear model for randomly selected 4 individuals. We will use the same model for each randomly selected individual.
+
+```{r}
+
+relation <- Total_Time~ DD+UD+H+session+rep
+
+s1 <- subset(agg_strong_pass_w_rep, agg_strong_pass_w_rep$subject==Z[1])
+s2 <- subset(agg_strong_pass_w_rep, agg_strong_pass_w_rep$subject==Z[2])
+s3 <- subset(agg_strong_pass_w_rep, agg_strong_pass_w_rep$subject==Z[3])
+s4 <- subset(agg_strong_pass_w_rep, agg_strong_pass_w_rep$subject==Z[4])
+
+row.names(s1) <- NULL
+row.names(s2) <- NULL
+row.names(s3) <- NULL
+row.names(s4) <- NULL
+
+m1_lm <-lm(formula = relation, data=s1)
+m2_lm <-lm(formula = relation, data=s2)
+m3_lm <-lm(formula = relation, data=s3)
+m4_lm <-lm(formula = relation, data=s4)
+
+
+```
+
+
+# Statistical Model Summaries
+Now we check the model statistics. The session is not significant for the developed model. The covariate rep depends on the randomly selected individuals. For the first two subjects, the covariate rep doesnot seem to effect the model. Therefore, we will build the model by excluding the variables which are not significant.
+
+```{r}
+summary(m1_lm)
+summary(m2_lm)
+summary(m3_lm)
+summary(m4_lm)
+```
+
+
+```{r}
+
+relation_1 <- Total_Time~ DD+UD+H
+
+m1_lm_upd <-lm(formula = relation_1, data=s1)
+m2_lm_upd <-lm(formula = relation_1, data=s2)
+m3_lm_upd <-lm(formula = relation_1, data=s3)
+m4_lm_upd <-lm(formula = relation_1, data=s4)
+
+```
+
+
+
+# Now we will make predictions on the randomly selected individuals.
+
+```{r}
+newdata_s1_DD <- seq(from= max(s1$DD), to=min(s1$DD), length=400)
+newdata_s1_UD <- seq(from= max(s1$UD), to=min(s1$UD), length=400)
+newdata_s1_H <- seq(from= max(s1$H), to=min(s1$H), length=400)
+
+newdata_s2_DD <- seq(from= max(s2$DD), to=min(s2$DD), length=400)
+newdata_s2_UD <- seq(from= max(s2$UD), to=min(s2$UD), length=400)
+newdata_s2_H <- seq(from= max(s2$H), to=min(s2$H), length=400)
+
+newdata_s3_DD <- seq(from= max(s3$DD), to=min(s3$DD), length=400)
+newdata_s3_UD <- seq(from= max(s3$UD), to=min(s3$UD), length=400)
+newdata_s3_H <- seq(from= max(s3$H), to=min(s3$H), length=400)
+
+
+newdata_s4_DD <- seq(from= max(s4$DD), to=min(s4$DD), length=400)
+newdata_s4_UD <- seq(from= max(s4$UD), to=min(s4$UD), length=400)
+newdata_s4_H <- seq(from= max(s4$H), to=min(s4$H), length=400)
+
+
+predictions_s1 <- predict(m1_lm_upd, newdata = data.frame(DD=newdata_s1_DD, UD=newdata_s1_UD, H=newdata_s1_H))
+
+predictions_s2 <- predict(m2_lm_upd, newdata = data.frame(DD=newdata_s2_DD, UD=newdata_s2_UD, H=newdata_s2_H))
+
+predictions_s3 <- predict(m3_lm_upd, newdata = data.frame(DD=newdata_s3_DD, UD=newdata_s3_UD, H=newdata_s3_H))
+
+predictions_s4 <- predict(m4_lm_upd, newdata = data.frame(DD=newdata_s4_DD, UD=newdata_s4_UD, H=newdata_s4_H))
+
+mean_temp_total_time_s1 <- c()
+mean_temp_total_time_s2 <- c()
+
+mean_temp_total_time_s3 <- c()
+mean_temp_total_time_s4 <- c()
+
+temp_session <-num_sessions-1
+
+for (i in 0: temp_session){
+  fac_1_temp <- num_repititions*i+1
+  fac_2_temp <- num_repititions*i+num_repititions
+  
+  
+  temp_1 <- mean(predictions_s1[fac_1_temp:fac_2_temp])
+  temp_2 <- mean(predictions_s2[fac_1_temp:fac_2_temp])
+  temp_3 <- mean(predictions_s3[fac_1_temp:fac_2_temp])
+  temp_4 <- mean(predictions_s4[fac_1_temp:fac_2_temp])
+  
+  
+  mean_temp_total_time_s1[i+1] <- temp_1
+  mean_temp_total_time_s2[i+1] <- temp_2
+  mean_temp_total_time_s3[i+1] <- temp_3
+  mean_temp_total_time_s4[i+1] <- temp_4
+  
+}
+
+# Getting the original data for each randomly selected individual
+
+s1_act <-agg_strong_passwords[agg_strong_passwords$subject == Z[1], ]
+s2_act <-agg_strong_passwords[agg_strong_passwords$subject == Z[2], ]
+
+s3_act <-agg_strong_passwords[agg_strong_passwords$subject == Z[3], ]
+s4_act <-agg_strong_passwords[agg_strong_passwords$subject == Z[4], ]
+
+```
+
+# Now we plot the mean total time over all the sessions for the selected individuals.
+
+
+```{r}
+# Now plot the data here
+plot(mean_temp_total_time_s1, type="b", ylim=c(0,max(c(mean_temp_total_time_s1,mean_temp_total_time_s2,mean_temp_total_time_s3,mean_temp_total_time_s4))), xlab = "Session Index",ylab="Mean Total Time" , col='red', main = "Mean Total Time (Actual vs Predicted)")
+lines(mean_temp_total_time_s2, type="b", col='green')
+lines(mean_temp_total_time_s3, type="b", col='blue')
+lines(mean_temp_total_time_s4, type="b", col='black')
+
+lines(s1_act$Total_Time, type="l", col='red')
+lines(s2_act$Total_Time, type="l", col='green')
+lines(s3_act$Total_Time, type="l", col='blue')
+lines(s4_act$Total_Time, type="l", col='black')
+
+
+legend("topright", legend=c(paste(c("Subject", Z[1]), collapse = " "), paste(c("Subject", Z[2]), collapse = " "), paste(c("Subject", Z[3]), collapse = " "), paste(c("Subject", Z[4]), collapse = " ")),
+       col=c("red", "green","blue", "black"), lty=1:2, cex=0.5)
+text(5, max(c(mean_temp_total_time_s1,mean_temp_total_time_s2,mean_temp_total_time_s3,mean_temp_total_time_s4))-0.8,"Solid=Actual, Dotted=Predicted", col = "Brown")
+
+```
+
+# Using linear mixed effect models. We will use a single dataframe for all the randomly selected individuals. From ANOVA, the linear model is a better fit for the given dataset.
+
+```{r}
+s_total_random <- subset(agg_strong_pass_w_rep, subject %in% c(Z[1],Z[2],Z[3],Z[4]))
+
+model_lmer_overall <- lmer(Total_Time ~ DD + UD + H + rep + 
+                      session + (1 | subject), data = s_total_random, 
+                    REML = FALSE, na.action = na.omit)
+
+
+model_lm_overall <-lm(Total_Time ~ DD + UD + H + rep + 
+                      session, data = s_total_random)
+
+
+
+#Performing the ANOVA test between linear and lmer model
+anova(model_lmer_overall, model_lm_overall)
+```
+
+# Using Formal Statistical Analysis to Test Original Conjecture
+Our conjecture was:
+"A person's typing dynamics changes over time".
+
+We will use formal statistical tests to determine whether this is true.
+
+# Using ANOVA to Test Our Conjecture
+If a person's typing dynamics changes over time then their total time will vary significantly from session to session. We will use ANOVA to test this. ANOVA is used to test whether two or more population means are equal or not. It is a generalized form of the t-test. Our two hypotheses are:
+
+H_0: The means between the sessions are not different.
+H_a: Them means between the session are different.
+
+As we can see for all three of the randomly selected subjects p < 0.05 therefore, we have to reject the null hypothesis for each of them. We assume this trend will hold generally.
+
+```{r}
+summary(aov(Total_Time ~ session, data=s1))
+summary(aov(Total_Time ~ session, data=s2))
+summary(aov(Total_Time ~ session, data=s3))
+summary(aov(Total_Time ~ session, data=s4))
+```
