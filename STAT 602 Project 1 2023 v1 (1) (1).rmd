@@ -1,0 +1,435 @@
+---
+title: "STAT 602 Project"
+author: "Mohammad Shafayet Jamil Hossain"
+date: "3/22/2023"
+output:
+  pdf_document: default
+  html_document: default
+  fig_caption: yes
+---
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,warning = F, message = F)
+```
+
+
+## Project Overview
+
+Identifying the correct beans from a selection of mixed dry beans could be an important cost saving measure for bean producers at market. Additionally, incorrectly identifying beans could also result in an excess expense to the consumer at market.
+
+The project's primary goal is to classify dry beans by developing multi-classification models using a variety of supervised machine learning classification algorithms. Regardless of the algorithm used, the model will use bean measurement variables as the inputs to classify the beans into one of six varieties.
+
+Once the models have been created, the model predictions will be compared to the actual values and a cost impact analysis will be performed. The best algorithm will be determined by not only the overall prediction accuracy, but by minimizing the overall cost impact as well.
+
+## Exploratory Analysis
+
+Seven variables will be analyzed to use as inputs for the supervised machine learning algorithms. Five of the seven variables have considerable positive correlation with each other as seen in Figure 1. The only two variables that are not highly correlated are the Extent and Eccentricity variables. The ConvexArea and Area variables are nearly perfectly correlated as the correlation coefficient is about 1. One of these variables will be excluded from fitting the models.
+
+The density and box plots, Figure 2 and Figure 3, show that the BOMBAY class of beans is distinct among five of the variables. Additionally, the CALI class of beans stands out in two of the variables. This pattern suggests that the classifiers will be able to easily identify these two classes of beans. The box plots and density plots also indicate that there is significant overlap between the classes of beans for the Extent variable.
+
+Linear Discriminant Analysis (LDA) and Quadratic Discriminant Analysis (QDA) models will be fit. LDA models perform well with variables that have similar variances among classification groups. There is a wide range of variances between the groups to be classified by this model. The QDA model will likely outperform the LDA models based on these variance ranges.
+
+Table 2 summarizes the statistics of all 3,000 bean observations. The ranges of the Area, Perimeter, and ConvexArea variables are large. Distance algorithms like k-nearest neighbor (KNN) and support vector machines (SVM) can experience performance deterioration with variables that have a large range. All variables will be scaled and normalized prior to fitting KNN and SVM models.
+
+The raw data set did not contain any null values or duplicate values. Some outliers were identified for certain variables, but the decision was made to include all data points in the final models.
+
+## Model Fit
+
+Six model multi-classification algorithms were investigated in total. These include Linear Discriminant Analysis (LDA), Quadratic Discriminant Analysis (QDA), Naive Bayes, Random Forest, Support Vector Machines (SVM), and k-nearest neighbor (KNN). Different combinations of predictor variables were tested based on the exploratory analysis. Ultimately, only the ConvexArea variable was exclude. The other six variables were used in all models. All models used the same train and test split. The raw data was split into a 70/30 train/test split.
+
+The LDA model was identified as a poor choice prior to fitting due to a large range of variance between the classes of beans. This assumption was confirmed with the prediction results outlined in the confusion matrices in Table 3 and Table 4. The QDA correctly predicted more observations among all 6 classes.
+
+The Naive Bayes model was fit as another comparison model. Like the LDA, the Naive Bayes model was predicted to be a poor fit for this classification problem. The primary benefit of the Naive Bayes algorithm is it's efficiency. However, the Naive assumption that all predictor variables are independent leads to poor overall accuracy. The confusion matrix shown in Table 5 shows that nearly every class had less correct predictions than the QDA model. The Naive Bayes model did outperform the LDA model.
+
+The random forest was the final model fit on the raw data before normalization and scaling. Random forest models are a good choice for classification problems because of the bootstrapping methods used. By taking multiple random samples of the observations with replacement, the variance can be minimized. Random forest models are also not constrained by distance algorithms. There is not a need to scale and normalize predictor variables prior to fitting. The random forest model outperformed the comparison LDA and Naive Bayes models, but it did not outperform the QDA model in terms of overall accuracy.
+
+The final two models, SVM and KNN, were fit with predictor variables that had been scaled and normalized. Both of these models are distance based algorithms and will experience a deterioration in performance if variables with a large range are used. Of these two model types, the SVM model was identified as not suitable for this data set. Many of the independent variables in this data set have a considerable amount of overlap between the classification groups. This can result in "noisy" data that causes SVM models to perform poorly. The SVM model outperformed the LDA and Naive Bayes models in terms of overall accuracy, but fell short to the QDA model.
+
+The KNN model was the final model fit. The k value here represents the number of nearest neighbors used in each iteration. The error rates for increasing the k-value from 1 to 50 were plotted in Figure 4. It was determined that there was no need to go beyond 50 as the error rate began to increase again. The minimum error rate was first found at $k=20.$ This optimal value of k was used in the model outlined by the confusion matrix in Table 8. The KNN model only beat the LDA model in overall accuracy.
+
+## Accuracy
+
+The overall model accuracy was not the only factor in selecting the best model for this classification problem. The total cost impact was considered as well. The overall cost impact was determined by first calculating the cost per bean from the provided weights and cost per pound. Then, all of the incorrectly predicted beans for each model were identified. The actual cost of the incorrect predictions was calculated by counting the number of beans in each reference group and multiplying by the respective cost per bean. The predicted cost was calculated by counting the number of beans in each prediction group and multiplying by the respective cost per bean. The difference was calculated as predicted cost minus actual cost. A positive difference represents extra income to the producer and a negative difference represents income lost by the producer.
+
+The overall accuracy and the net cost impact is outlined in Table 9. The overall best model in terms of prediction accuracy is the QDA model, however the best model in terms of minimizing overall cost impact is the random forest model. The LDA, Naive Bayes, and QDA models all had the same net cost impact, even though they had different prediction accuracy.
+
+## Conclusions
+
+The best model to minimize cost impact was determined to be the random forest model using all independent variables expect ConvexArea. This random forest model is our suggestion for the predictive classification model to use for minimizing cost. This model did not have the highest prediction accuracy. If the classification question depended only on accurate predictions, we would suggest the QDA model.
+
+## References
+
+1. Kara, M., Sayinci, B., Elkoca, E., Özturka I., & Özmen T. (2013). Seed Size and Shape Analysis of Registered Common Bean (Phaseolus
+vulgaris L.) Cultivars in Turkey Using Digital Photography.
+2. https://scikit-learn.org/stable/modules/naive_bayes.html
+3. An Introduction to Statistical Learning
+4. Dr. Saunder's Class Notes
+5. Khan, M., Nath, T,. Hossain, M., Mukherjee, A., Hasnath, H., Meem, T., & Khan, U. (2023). Comparison of multiclass classification techniques using dry bean dataset, 
+https://doi.org/10.1016/j.ijcce.2023.01.002.
+6. Ray, S. (2023). https://www.analyticsvidhya.com/blog/2017/09/naive-bayes-explained/
+7. Great Learning Team (2022). https://www.mygreatlearning.com/blog/random-forest-algorithm/
+8. Khoong, W. (2021). https://towardsdatascience.com/when-do-support-vector-machines-fail-3f23295ebef2
+
+
+```{r,warning=FALSE,message=FALSE}
+library(Ecdat)
+library(boot)
+library(dplyr)
+library(ggplot2)
+library(caret)
+library(e1071)
+library(MASS)
+library(class)
+library(naivebayes)
+library(GGally)
+library(ggcorrplot)
+library(corrplot)
+library(psych)
+library(kableExtra)
+library(ggpubr)
+library(randomForest)
+```
+
+```{r}
+#import data
+#raw.dat <- read.csv("labeled.csv")
+raw.dat <- labeled <- read.csv("C:/Users/mh734/Desktop/Jan 2023/stat 602/project 1/labeled.csv")
+raw.dat$Class <- as.factor(raw.dat$Class)
+#removing this X column
+drop <- c("X")
+raw.dat = raw.dat[,!(names(raw.dat) %in% drop)]
+```
+
+
+```{r, fig.cap="Summary of the correlation between the seven potential independent variables."}
+#calc correlation coefficients
+correlation <- round(cor(raw.dat[,-8]),2)
+#use ggcorr
+correlation.plot <- ggcorrplot(correlation, hc.order = TRUE, type = "lower", lab = TRUE, lab_size = 3, method="square", colors = c("red", "white", "blue"), outline.color = "gray", show.legend = TRUE, show.diag = TRUE, title="Correlation Matrix of Variables")
+correlation.plot
+```
+
+```{r}
+summary(raw.dat[,-8])
+
+```
+
+
+
+
+
+```{r, fig.cap="Summary of the correlation between the seven potential independent variables."}
+pp <- ggpairs(raw.dat, aes(color = Class, alpha = 0.1),
+         upper=list(continuous='blank'))
+pp +theme_bw()
+```
+
+
+
+```{r,fig.width=9,fig.height=10,fig.cap="Boxplots of each of the seven independent variables."}
+#boxplots of the 5 possible variables
+par(mfrow = c(4,2))
+boxplot(Area ~ Class, data = raw.dat, main = "Area")
+boxplot(Perimeter ~ Class, data = raw.dat, main = "Perimeter")
+boxplot(MinorAxisLength ~ Class, data = raw.dat, main = "MinorAxisLength")
+boxplot(MajorAxisLength ~ Class, data = raw.dat, main = "MajorAxisLength")
+boxplot(Eccentricity ~ Class, data = raw.dat, main = "Eccentricity")
+boxplot(ConvexArea ~ Class, data = raw.dat, main = "ConvexArea")
+boxplot(Extent ~ Class, data = raw.dat, main = "Extent")
+```
+
+
+```{r, fig.width=9, fig.height=10,fig.cap="Density plots of each of the seven independent variables."}
+#just plotting ggpaird to get the density plots
+dat.gg <- ggpairs(raw.dat, mapping = aes(color = Class,alpha = 1), 
+              diag = list(continuous = wrap("densityDiag", size = .01, color = "black")),
+              upper = list(continuous = wrap("cor", size = 3)))
+
+#extracting density plots
+a <- dat.gg[1,1] + scale_alpha(guide = "none")
+b <- dat.gg[2,2] + scale_alpha(guide = "none")
+c <- dat.gg[3,3] + scale_alpha(guide = "none")
+d <- dat.gg[4,4] + scale_alpha(guide = "none")
+e <- dat.gg[5,5] + scale_alpha(guide = "none")
+f <- dat.gg[6,6] + scale_alpha(guide = "none")
+g <- dat.gg[7,7] + scale_alpha(guide = "none")
+
+#combine
+density.plot = ggarrange(a,b,c,d,e,f,g, ncol = 2, nrow = 4)
+density.plot
+```
+
+```{r}
+#calc variance of each variable by Class
+variance <- raw.dat%>%group_by(Class)%>%summarize(Area=var(Area)
+            ,Perimeter=var(Perimeter),MajAxisLen=var(MajorAxisLength)
+            ,MinAxisLen=var(MinorAxisLength),Eccentricity=min(Eccentricity)
+            ,ConvexArea=var(ConvexArea),Extent=var(Extent))
+#kable it
+kable(variance, caption = "Variable Variance by Class")%>%kable_paper(full_width = F)
+```
+
+
+```{r}
+#summarize without class
+summary.dat <- round(describe(raw.dat[,-8]),2)
+#drop columns
+drop <- c("vars","skew","kurtosis","mad","trimmed")
+summary.dat = summary.dat[,!(names(summary.dat) %in% drop)]
+#kable it
+kable(summary.dat, caption="Statistical Summary of Bean Variables")%>%
+                kable_paper(full_width = F)
+```
+
+
+```{r}
+#add cost
+raw.dat <- raw.dat %>%
+  mutate(Cost = case_when(
+    Class == "BOMBAY" ~ "5.56",
+    Class == "CALI" ~ "6.02",
+    Class == "DERMASON" ~ "1.98",
+    Class == "HOROZ" ~ "2.43",
+    Class == "SEKER" ~ "2.72",
+    Class == "SIRA" ~ "5.40"
+    ))
+
+#add weight
+raw.dat <- raw.dat %>%
+  mutate(Density = case_when(
+    Class == "BOMBAY" ~ "1.92",
+    Class == "CALI" ~ "0.61",
+    Class == "DERMASON" ~ "0.28",
+    Class == "HOROZ" ~ "0.52",
+    Class == "SEKER" ~ "0.49",
+    Class == "SIRA" ~ "0.38"
+    ))
+
+raw.dat <- raw.dat %>%
+  mutate(CostPerSeed = case_when(
+    Class == "BOMBAY" ~ (1.92/453.592) * 5.56,
+    Class == "CALI" ~ (0.61/453.592) * 6.02,
+    Class == "DERMASON" ~ (0.28/453.592) * 1.98,
+    Class == "HOROZ" ~ (0.52/453.592) * 2.43,
+    Class == "SEKER" ~ (0.49/453.592) * 2.72,
+    Class == "SIRA" ~ (0.38/453.592) * 5.40
+    ))
+
+#i just wanna extract the cost per seed for joins later on
+cost.dat <- raw.dat[,c(8,11)]
+cost.dat <- distinct(cost.dat,Class,CostPerSeed)
+
+#create an empty data frame to track costs
+#costdiff.dat <- data.frame(matrix(ncol = 4, nrow = 0))
+costdiff.dat <- data.frame(Model = character()
+                           ,PredCost = double()
+                           ,AcutalCost = double()
+                           ,Difference = double())
+colnames(costdiff.dat) <- c("Model","PredCost","ActualCost","Difference")
+```
+
+
+```{r}
+#splitting into test and train
+set.seed(123)
+sample <- sample(c(TRUE, FALSE), nrow(raw.dat), replace=TRUE, prob=c(0.7,0.3))
+train <- raw.dat[sample, ]
+test <- raw.dat[!sample, ]
+```
+
+
+```{r}
+#fit on train
+lda1 <- lda(Class ~ Area+Perimeter+MajorAxisLength+MinorAxisLength+Eccentricity+Extent,data = train)
+#run predictions on the test
+lda1.prob <- predict(lda1,test,type='response')
+#create confusion matrix
+confusion.lda1 <- confusionMatrix(test$Class,lda1.prob$class)
+#kable it
+kable(confusion.lda1$table, caption = "LDA Confusion Matrix")%>%kable_paper(full_width = F)
+#store overall accuracy
+lda1.acc <-confusion.lda1$overall[1]
+```
+
+```{r}
+#add total cost difference to data frame
+df <- as.data.frame(confusion.lda1$table)
+df <- df[df$Prediction != df$Reference,]
+actual <- sum(merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$Freq)
+predicted <- sum(merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$Freq)
+costdiff.dat[nrow(costdiff.dat) + 1,] = c("LDA",round(predicted,2),round(actual,2),round(predicted - actual,2))
+```
+
+
+```{r}
+#fit on train
+qda1 <- qda(Class ~ Area+Perimeter+MajorAxisLength+MinorAxisLength+Eccentricity+Extent,data = train)
+#run predictions on the test
+qda1.prob <- predict(qda1,test,type='response')
+#create confusion matrix
+confusion.qda1 <- confusionMatrix(test$Class,qda1.prob$class)
+#kable it
+kable(confusion.qda1$table, caption = "QDA Confusion Matrix")%>%kable_paper(full_width = F)
+#store overall accuracy
+qda1.acc <-confusion.qda1$overall[1]
+```
+
+```{r}
+#add total cost difference to data frame
+df <- as.data.frame(confusion.qda1$table)
+df <- df[df$Prediction != df$Reference,]
+actual <- sum(merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$Freq)
+predicted <- sum(merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$Freq)
+costdiff.dat[nrow(costdiff.dat) + 1,] = c("QDA",round(predicted,2),round(actual,2),round(predicted - actual,2))
+```
+
+
+```{r,warning=FALSE}
+#fit
+nb1 <- naive_bayes(Class ~ Area+Perimeter+MajorAxisLength+MinorAxisLength+Eccentricity+Extent,data = train)
+#predict
+nb1.prob <- predict(nb1,test,type='class')
+#confusion matrix
+confusion.nb1 <- confusionMatrix(test$Class,nb1.prob)
+#kable it
+kable(confusion.nb1$table, caption = "Naive Bayes Confusion Matrix")%>%kable_paper(full_width = F)
+#store overall accuracy
+nb1.acc <-confusion.nb1$overall[1]
+```
+
+```{r}
+#add total cost difference to data frame
+df <- as.data.frame(confusion.nb1$table)
+df <- df[df$Prediction != df$Reference,]
+actual <- sum(merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$Freq)
+predicted <- sum(merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$Freq)
+costdiff.dat[nrow(costdiff.dat) + 1,] = c("Naive Bayes",round(predicted,2),round(actual,2),round(predicted - actual,2))
+```
+
+```{r}
+set.seed(1234)
+rf1 <- randomForest(Class ~ Area+Perimeter+MajorAxisLength+MinorAxisLength+Eccentricity+Extent, data = train, proximity = TRUE)
+#predict
+rf1.prob <- predict(rf1,test,type='class')
+#confusion matrix
+confusion.rf1 <- confusionMatrix(test$Class,rf1.prob)
+#kable it
+kable(confusion.rf1$table, caption = "Random Forest Confusion Matrix")%>%kable_paper(full_width = F)
+#store overall accuracy
+rf1.acc <-confusion.rf1$overall[1]
+```
+```{r}
+#add total cost difference to data frame
+df <- as.data.frame(confusion.rf1$table)
+df <- df[df$Prediction != df$Reference,]
+actual <- sum(merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$Freq)
+predicted <- sum(merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$Freq)
+costdiff.dat[nrow(costdiff.dat) + 1,] = c("Random Forest",round(predicted,2),round(actual,2),round(predicted - actual,2))
+```
+
+
+```{r}
+#scale and normalize for SVM and KNN
+train_scale <- train
+test_scale <- test
+#normalize data for SVM
+train_scale[-8:-10] <- scale(train[-8:-10])
+test_scale[-8:-10] <- scale(test[-8:-10])
+```
+
+```{r}
+svm1 <- svm(Class ~ Area+Perimeter+MajorAxisLength+MinorAxisLength+Eccentricity+Extent,data = train_scale, type = 'C-classification', kernel = 'linear')
+#predict
+svm1.prob <- predict(svm1,test_scale,type='class')
+#confusion matrix
+confusion.svm1 <- confusionMatrix(test_scale$Class,svm1.prob)
+#kable it
+kable(confusion.svm1$table, caption = "SVM Confusion Matrix")%>%kable_paper(full_width = F)
+#store overall accuracy
+svm1.acc <-confusion.svm1$overall[1]
+```
+```{r}
+#add total cost difference to data frame
+df <- as.data.frame(confusion.svm1$table)
+df <- df[df$Prediction != df$Reference,]
+actual <- sum(merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$Freq)
+predicted <- sum(merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$Freq)
+costdiff.dat[nrow(costdiff.dat) + 1,] = c("SVM",round(predicted,2),round(actual,2),round(predicted - actual,2))
+```
+
+
+```{r,fig.cap="Error of KNN models with increasing k with optimal k value shown in red."}
+#gonna loop through a bunch of k values and see what we get
+set.seed(1234)
+#initialize a vector
+err.rate <- NULL
+for(i in 1:50){
+#fit
+knn1 <- knn(train = train_scale[,c(-6,-8,-9,-10,-11)],test = test_scale[,c(-6,-8,-9,-10,-11)],cl = train_scale$Class, k = i)
+#confusion matrix
+#confusion.Auto.knn1 <- confusionMatrix(as.factor(Auto.test$mpg01),as.factor(Auto.knn1))
+#confusion.Auto.knn1
+#Calc the test error rate
+err.rate[i] <- mean(knn1 != as.factor(test$Class))
+}
+#plot the error rates
+#plot(err.rate, type='b',xlab = "k value", ylab = "Error Rate")
+#minimized at about k= 35 for this seed
+
+error.rate <- as_tibble(cbind(x=1:50, Err.Rate=err.rate))
+
+ggplot(error.rate) + 
+  geom_line(aes(x, y=err.rate), color = "black", size=1) +
+  geom_point(aes(x, y=err.rate), color = "black", size=2) + 
+  geom_vline(xintercept = 20, linetype="dashed", 
+             color = "red", size=1)+
+  labs(y="Error Rate",
+  x ="k value",
+  title="Optimal K Value")
+```
+
+
+```{r}
+set.seed(1234)
+knn1 <- knn(train = train_scale[,c(-6,-8,-9,-10,-11)],test = test_scale[,c(-6,-8,-9,-10,-11)],cl = train_scale$Class, k = 20)
+confusion.knn1 <- confusionMatrix(table(Prediction = knn1,Reference = test_scale$Class),type="class")
+#kable it
+kable(confusion.knn1$table, caption = "KNN Confusion Matrix")%>%kable_paper(full_width = F)
+#store overall accuracy
+knn1.acc <-confusion.knn1$overall[1]
+```
+```{r}
+#add total cost difference to data frame
+df <- as.data.frame(confusion.knn1$table)
+df <- df[df$Prediction != df$Reference,]
+actual <- sum(merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Reference", by.y = "Class")$Freq)
+predicted <- sum(merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$CostPerSeed * merge(x = df, y = cost.dat, by.x = "Prediction", by.y = "Class")$Freq)
+costdiff.dat[nrow(costdiff.dat) + 1,] = c("KNN",round(predicted,2),round(actual,2),round(predicted - actual,2))
+```
+
+
+
+```{r}
+#get all the accuracies and costs
+#round the cost matrix first
+#costdiff.dat[,2:4] <- as.numeric(as.character(costdiff.dat[,2:4]))
+#costdiff.dat %>% mutate_if(is.numeric, ~round(., 2))
+prefinal.dat <- data.frame(cbind(Model = c("LDA","QDA","Naive Bayes","Random Forest","SVM","KNN")
+                              ,Accuracy = round(rbind(lda1.acc,qda1.acc,nb1.acc,rf1.acc,svm1.acc,knn1.acc),4)))
+
+final.dat <- merge(x = prefinal.dat,y = costdiff.dat, by = "Model")
+
+kable(final.dat, caption = "Summary of the six model accuracies and cost impact.")%>%kable_paper(full_width = F)
+```
+
+
+```{r,fig.cap="Overall model accuracies summarized."}
+acc.plot <- ggplot(final.dat) +
+  geom_col(aes(x=Model, y=Accuracy,fill=Model), color = "black") +
+  labs(y="Prediction Accuracy",
+  x ="Model",
+  title="Model Accuracy")
+  
+acc.plot
+```
